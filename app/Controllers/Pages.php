@@ -10,12 +10,15 @@ use CodeIgniter\Database\Database;
 class Pages extends BaseController
 {
     protected $produk_layanan;
+    protected $paket_layanan;
+
 
     public function __construct()
-    {
-        $this->produk_layanan = new produk_layananModel();
-        $this->paket_layanan = new paket_layananModel();
-    }
+{
+    $this->produk_layanan = new produk_layananModel();
+    $this->paket_layanan = new paket_layananModel();
+}
+
 
     public function mapingProdukPaket($dataProduk, $dataPaket)
     {

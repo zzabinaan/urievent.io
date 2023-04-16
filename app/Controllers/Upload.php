@@ -9,6 +9,11 @@ use App\Models\subkategori_layananModel;
 
 class Upload extends BaseController
 {
+    protected $produk_layanan;
+    protected $paket_layanan;
+    protected $kategori_layanan;
+    protected $subkategori_layanan;
+    
     public function __construct()
     {
         $this->produk_layanan = new produk_layananModel();

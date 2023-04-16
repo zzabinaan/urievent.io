@@ -9,7 +9,10 @@ use App\Models\subkategori_layananModel;
 
 class Editlayanan extends BaseController
 {
-    protected $dataPaketNow;
+    protected $produk_layanan;
+    protected $paket_layanan;
+    protected $kategori_layanan;
+    protected $subkategori_layanan;
 
     public function __construct()
     {
@@ -44,7 +47,6 @@ class Editlayanan extends BaseController
 
     public function index($id_layanan, $id_kategori, $id_subkategori)
     {
-
         $dataProduk = $this->produk_layanan->getDetail($id_layanan);
         $dataPaket = $this->paket_layanan->findAll();
         $dataPaketNow = $this->paket_layanan->getDetail($id_layanan);
@@ -58,23 +60,6 @@ class Editlayanan extends BaseController
         $steps_before = explode('__', $dataProduk['step_before']);
         $steps_after = explode('__', $dataProduk['step_after']);
         $values = explode('__', $dataProduk['value']);
-
-        // dd($dataProduk);
-        // dd($subKategori_now);
-        // $daftar_produk['nama_kategori'] = $namaKategori['nama_kategori'];
-
-        // $step_before_list = [
-        //     "Upload poster event yang sudah berlogo company kami",
-        //     "Isi caption atau tambahan lainnya untuk keperluan upload",
-        //     "Kirim bukti transfer"
-        // ];
-        // $step_before_produk = explode('__', $dataProduk['step_before']);
-        // $steps = array_map(function ($step) use($step_before_list)
-        // {
-        //     array_search($step, $step_before_list)
-        // }, $step_before_produk)
-
-        // dd(count($dataProduk['paket']));
 
         $dataPage = [
             'title' => "UriEvent | Edit Service",
@@ -92,23 +77,20 @@ class Editlayanan extends BaseController
 
     public function saveEdit($id_layanan)
     {
-        // $button_save = $this->input->post('button_save');
-        // dd($this->request->getVar());
         $button_save = $this->request->getVar('button_save');
+
         if ($button_save == 'save_draft') {
             $status_layanan = "draft";
         } else if ($button_save == "save") {
             $status_layanan = 'uploaded';
         }
 
-        $id_layanan = $id_layanan;
         $dataProduk = $this->produk_layanan->getDetail($id_layanan);
         $dataProduk_new = $this->request->getVar();
 
-        // array to string 
-        $step_before = join('__', $this->request->getVar('stepBefore'));
-        $step_after = join('__', $this->request->getVar('stepAfter'));
-        $value = join('__', $this->request->getVar('value'));
+        $step_before = implode('__', $this->request->getVar('stepBefore'));
+        $step_after = implode('__', $this->request->getVar('stepAfter'));
+        $value = implode('__', $this->request->getVar('value'));
 
         $fileGambar = $this->request->getFile('layanan-img');
 
@@ -135,11 +117,8 @@ class Editlayanan extends BaseController
         $this->produk_layanan->save($dataProduk);
 
         foreach ($daftarPaket as $paket) {
-            if (!isset($paket['id_paket'])) {
-                $id_paket = $this->generateIDPaket();
-            } elseif (isset($paket['id_paket'])) {
-                $id_paket = $paket['id_paket'];
-            }
+            $id_paket = $paket['id_paket'] ?? $this->generateIDPaket();
+
             $dataPaket = [
                 'id_paket' => $id_paket,
                 'id_layanan' => $id_layanan,
@@ -150,25 +129,27 @@ class Editlayanan extends BaseController
 
             $this->paket_layanan->save($dataPaket);
         }
+
         return redirect()->to('/pages/uriservice');
     }
-
-
 
     public function generateIDPaket()
     {
         $dataPaket = $this->paket_layanan->orderBy('id_paket', 'desc')->first();
-        // explode
-        $id_paket_string =  explode('P', $dataPaket['id_paket']);
-        // string to int
-        $id_paket_terakhir = intval(end($id_paket_string));
-        // dd($id_paket_string);
+        if ($dataPaket) {
+            // explode
+            $id_paket_string = explode('P', $dataPaket->id_paket);
+            // string to int
+            $id_paket_terakhir = intval(end($id_paket_string));
+        } else {
+            $id_paket_terakhir = 0;
+        }
         // nambah id+1 buat id baru
-        $new_id_paket =  $id_paket_terakhir + 1;
+        $new_id_paket = $id_paket_terakhir + 1;
         // balikin jadi string buat id baru
         $new_str_id_paket = (string) $new_id_paket;
-        // cek lenght string dan validasi sekalian bikin 
-        if (strlen($new_str_id_paket) == 2) {
+        // cek length string dan validasi sekalian bikin 
+        if (strlen($new_str_id_paket) == 1) {
             $new_id_paket = 'P0' . $new_str_id_paket;
         } else {
             $new_id_paket = 'P' . $new_str_id_paket;
@@ -176,11 +157,10 @@ class Editlayanan extends BaseController
         return $new_id_paket;
     }
 
-
     public function getImageLayanan($fileImage, $product = null)
     {
-        if ($fileImage->getError() == 4) {
-            if ($product[0] != null && isset($product[0]['picture_poster'])) {
+        if (!$fileImage) {
+            if ($product && isset($product[0]['picture_poster'])) {
                 return $product[0]['picture_poster'];
             }
             return null;
@@ -189,11 +169,6 @@ class Editlayanan extends BaseController
         $fileName = $fileImage->getRandomName();
         $fileImage->move('img/picture_poster_layanan', $fileName);
 
-        // if ($product[0] != null && isset($product[0]['picture_poster'])) {
-        //     // unlink('img/picture_poster_layanan/' . $product[0]['picture_poster']);
-        //     return $product[0]['picture_poster'];
-        // }
-
         return $fileName;
     }
 
@@ -201,6 +176,7 @@ class Editlayanan extends BaseController
     {
         $dataSubKategori = $this->subkategori_layanan->getDataSubKategori($id_kategori);
         $data = json_encode($dataSubKategori);
-        echo $data;
+        return $data;
     }
+
 }

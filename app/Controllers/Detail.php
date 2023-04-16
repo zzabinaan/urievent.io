@@ -14,6 +14,9 @@ class Detail extends BaseController
     protected $id_layanan;
     protected $id_subkategori;
     protected $paket_layanan;
+    protected $kategori_layanan;
+    protected $subkategori_layanan;
+
 
     public function __construct()
     {
